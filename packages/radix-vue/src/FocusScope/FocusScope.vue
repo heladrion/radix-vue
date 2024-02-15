@@ -68,6 +68,27 @@ const focusScope = reactive({
   },
 })
 
+function useAsyncExecuting<T>(promise: () => Promise<T>) {
+  let counter = 0
+  async function execute() {
+    try {
+      counter += 1
+      return await promise()
+    }
+    finally {
+      counter -= 1
+    }
+  }
+  function isExecuting() {
+    return counter > 0
+  }
+  return {
+    execute,
+    isExecuting,
+  }
+}
+const { execute: executeNextTick, isExecuting: isExecutingNextTick } = useAsyncExecuting(nextTick);
+
 watchEffect((cleanupFn) => {
   if (!isClient)
     return
@@ -117,6 +138,10 @@ watchEffect((cleanupFn) => {
   // if the element still exist inside the container,
   // if not then we focus to the container
   function handleMutations(mutations: MutationRecord[]) {
+    // Do not fix the focus, while we are still handling
+    // the initialization of the component during watchEffect
+    if (isExecutingNextTick())
+      return
     const isLastFocusedElementExist = container.contains(lastFocusedElementRef.value)
     if (!isLastFocusedElementExist)
       focus(container)
@@ -138,7 +163,7 @@ watchEffect((cleanupFn) => {
 watchEffect(async (cleanupFn) => {
   const container = currentElement.value
 
-  await nextTick()
+  await executeNextTick()
   if (!container)
     return
   focusScopesStack.add(focusScope)
