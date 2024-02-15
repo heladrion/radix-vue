@@ -17,7 +17,7 @@ export interface AlertDialogContentProps extends DialogContentProps {}
 </script>
 
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { ref } from 'vue'
 import { DialogContent } from '@/Dialog'
 
 const props = defineProps<AlertDialogContentProps>()
@@ -41,15 +41,11 @@ provideAlertDialogContentContext({
     role="alertdialog"
     @pointer-down-outside.prevent
     @interact-outside.prevent
-    @open-auto-focus="
-      () => {
-        nextTick(() => {
-          cancelElement?.focus({
-            preventScroll: true,
-          });
-        });
-      }
-    "
+    @open-auto-focus.prevent="(event) => {
+      cancelElement?.focus({
+        preventScroll: true,
+      })
+    }"
   >
     <slot />
   </DialogContent>
